@@ -1,66 +1,52 @@
-% (2.2) ELIMINAR ÁREAS EN BW
-
 if exist('BW','var')
 
-    % Mostrar imagen y cuadro de diálogo con instrucciones
     warning off all
     figure,	imshow(imcomplement(BW)),
     warning on all
     menu_elimbw = menu({ ...
-        '(3.3) ELIMINAR ELEMENTOS SELECCIONADOS'
-        'DEFINICIÓN DE ÁREA CON ELEMENTOS A ELIMINAR'
+        '(3.3) REMOVE SELECTED ELEMENTS'
+        'DEFINE AREA CONTAINING ELEMENTS TO BE REMOVED'
         '________________________'
         ''
-        'Realice un ZOOM al elemnto que desea eliminar'
+        'ZOOM to that element you wish to remove'
         ''
-        'Seleccione puntos que envuelvan al elemento que'
-        'desea eliminar, haciendo CLICK en la imagen'
+        'Clicking on the image, select points so as to surround the area that you wish to remove'
         ''
-        'Presione ENTER al finalizar selección'
+        'Hit ENTER when done'
         '________________________'
         ''
-        'Haga click en OK al finalizar el zoom'
-        '(No cierre la imagen. Haga click en Cancelar'
-        'o cierre esta ventana para salir de la'
-        'definición de márgenes)'}, ...
+        'Click OK when done zooming'
+        '(Do not close the image. Click “Cancel”'
+        'or else close this window in order to exit)'}, ...
         'OK', ...
-        'Cancelar');
+        'Cancel');
 
     switch menu_elimbw
         case 1
-            % Selección de puntos
             [x_elim_bw, y_elim_bw,    ~] = impixel;
             close
-            % Definición de área a eliminar
             E_bw = zeros(rows,cols);
             for m = 1:length(x_elim_bw)
                 E_bw(y_elim_bw(m),x_elim_bw(m)) = 1;
             end
             E_bw = bwconvhull(E_bw);
-            % Borrado de área
             BW(E_bw == 1) = 0;
             
-            % Comparación antes y después de la imagen. Guardar Cambios,
-            % junto con versión anterior de la imagen
             run('c2_guardar_cambios_bw')
             
             if menu_guardar == 1
-                % Mensaje en la ventana de comandos
-                disp(['- (3.3) Eliminar Elementos (manual)              TERMINADO!        ' datestr(now)])
+                disp(['- (3.3) Remove Elements (manual)              COMPLETED!        ' datestr(now)])
             end
 
-            % Cuadro de pregunta para seleccionar más áreas
-            quest_elimbw = questdlg('¿Desea seleccionar otra área con elementos a eliminar?','Eliminar Elementos','Si','No','Si');
-            if all(quest_elimbw == 'Si')
+            quest_elimbw = questdlg('Do you wish to select some other area with elements to be removed?','Remove Elements','Yes','No','Yes');
+            if all(quest_elimbw == 'Yes')
                 run('b33_eliminar_bw')
             end
         otherwise
             close
     end
 elseif exist('RGB','var') && ~ exist('BW','var')
-    % Cuadro de error en caso de no haber reconocido la linea
-    errordlg('Debe identificar la línea antes de borrar áreas.','Error: Imagen no encontrada')
+    errordlg('You must identify the line before removing elements.','Error: Line not identified')
 else
-    % Cuadro de error en caso de no haber seleccionado la imagen
-    errordlg('Debe seleccionar una imagen antes de eliminar áreas.','Error: Imagen no encontrada')
+    errordlg('You must select an image before removing elements.','Error: Image not found')
 end

@@ -1,8 +1,5 @@
-% DESHACER CAMBIOS EN LA IMAGEN
-
 if exist('C','var') && numel(C) > 1
     
-    % Almacenado de cambios deshechos
     if exist('C2','var')
         C2(length(C2) + 1) = C(end);
     else
@@ -13,7 +10,6 @@ if exist('C','var') && numel(C) > 1
         C2(1) = [];
     end
     
-    % Escritura de la imagen, ya sea RGB o binaria
     dim_ultimo_guardado = numel(size(cell2mat(C(end))));
     switch dim_ultimo_guardado
         case 3
@@ -23,11 +19,9 @@ if exist('C','var') && numel(C) > 1
             BW = cell2mat(C(end));
     end
     
-    % Vista previa de cambio deshecho
     run('c3_vista_previa')
     
 else
-    % Cuadro de error en caso de no existir cambios
-    errordlg('No existen suficientes versiones anteriores de la imagen para poder deshacer cambios.','Error: Deshacer Imagen')
+    errordlg('There are not enough previous versions of this image in order to undo changes.','Error: Undo Changes')
 end
     

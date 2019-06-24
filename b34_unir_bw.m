@@ -1,60 +1,49 @@
-% (3.4) UNIR ELEMENTOS EN BW
-
 if exist('BW','var')
 
-    % Mostrar imagen y cuadro de diálogo con instrucciones
     warning off all
     figure,	imshow(imcomplement(BW))
     warning on all
     menu_unirbw = menu({ ...
-        '(3.4) UNIR ELEMENTOS'
-        'DEFINICIÓN DE LINEA DE UNIÓN'
+        '(3.4) JOIN ELEMENTS'
+        'DEFINING THE JOINED LINE'
         '________________________'
         ''
-        'Realice un ZOOM al área donde unirá elementos'
+        'ZOOM to the area where you will join elements'
         ''
-        'Dibuje la linea a partir de segmentos rectos,'
-        'haciendo CLICK en la imagen'
+        'Draw the line with straight segments,'
+        'clicking on the image'
         ''
-        'Presione ENTER al finalizar zoom'
         '________________________'
         ''
-        'Haga click en OK al finalizar el zoom'
-        '(No cierre la imagen. Haga click en Cancelar'
-        'o cierre esta ventana para salir de la'
-        'definición de márgenes)'}, ...
+        'Click OK when done zooming'
+        '(Do not close the image. Click “Cancel”'
+        'or else close this window in order to exit)'}, ...
         'OK', ...
-        'Cancelar');
+        'Cancel');
 
     switch menu_unirbw
         case 1
-            % Trazado de línea
             [x_unir_bw,y_unir_bw,~,~,~] = improfile;
             close
             x_unir_bw = round(x_unir_bw);
             y_unir_bw = round(y_unir_bw);
-            % Almacenamiento matriz con línea a trazar
+
             L_bw = zeros(rows,cols);
             for m = 1:numel(x_unir_bw)
                 L_bw(y_unir_bw(m),x_unir_bw(m)) = 1;
             end
-            % (Al parecer) por redondeo la linea queda segmentada
+            
             L_bw = bwmorph(L_bw,'bridge');
-            % Escribir unión en BW
             BW(L_bw == 1) = 1;
 
-            % Comparación antes y después de la imagen. Guardar Cambios, junto 
-            % con versión anterior de la imagen
             run('c2_guardar_cambios_bw')
 
             if menu_guardar == 1
-                % Mensaje en la ventana de comandos
-                disp(['- (3.4) Unir Elementos (manual)                  TERMINADO!        ' datestr(now)])
+                disp(['- (3.4) Join Elements (manual)                  COMPLETED!' datestr(now)])
             end
 
-            % Cuadro de pregunta para seleccionar unir más elementos
-            quest_unirbw = questdlg('¿Desea unir más elementos de la imagen?','Unir Elementos','Si','No','Si');
-            if all(quest_unirbw == 'Si')
+            quest_unirbw = questdlg('Do you wish to join more elements of this image?','Join Elements','Yes','No','Yes');
+            if all(quest_unirbw == 'Yes')
                 run('b34_unir_bw')
             end
     otherwise
@@ -62,9 +51,7 @@ if exist('BW','var')
     end
     
 elseif exist('RGB','var') && exist('BW','var') == 0
-    % Cuadro de error en caso de no haber reconocido la linea
-    errordlg('Debe identificar la línea antes de borrar áreas.','Error: Imagen no encontrada')
+    errordlg('You must identify the line before joining elements.','Error: Line not identified')
 else
-    % Cuadro de error en caso de no haber seleccionado la imagen
-    errordlg('Debe seleccionar una imagen antes de eliminar áreas.','Error: Imagen no encontrada')
+    errordlg('You must select an image before removing areas.','Error: Image not found')
 end

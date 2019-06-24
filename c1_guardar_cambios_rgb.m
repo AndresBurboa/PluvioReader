@@ -1,26 +1,20 @@
-% COMPARACIÓN DE ANTES Y DESPUÉS, GUARDADO DE CAMBIOS Y GUARDADO DE
-% VERSIONES ANTERIORES DE LA IMAGEN. VALIDO PARA IMÁGENES RGB
-
 if exist('RGB','var') && exist('RGB0','var')
     
-    % Cantidad máxima de cambios almacenados
     max_cambios = 10;
     
-    % Gráfica comparación
     warning off all
-    figure, subplot(2,1,1), imshow(RGB), title('Imagen antes de los cambios','FontWeight','bold','FontSize',12)
-            subplot(2,1,2), imshow(RGB0), title('Imagen después de los cambios','FontWeight','bold','FontSize',12)
-            set(gcf,'units','normalized','outerposition',[0.1 0.1 0.8 0.8],'Name','Imágenes antes y después de los cambios realizados','NumberTitle','off')
+    figure, subplot(2,1,1), imshow(RGB), title('Image before changes','FontWeight','bold','FontSize',12)
+            subplot(2,1,2), imshow(RGB0), title('Image after changes','FontWeight','bold','FontSize',12)
+            set(gcf,'units','normalized','outerposition',[0.1 0.1 0.8 0.8],'Name','Images before and after performing changes','NumberTitle','off')
     warning on all
 
-    % Pregunta guardar cámbios
     menu_guardar = menu({ ...
-            'GUARDAR CAMBIOS'
+            'SAVE CHANGES'
             '______________'
             ''
-            '¿Desea guardar los cambios'
-            'realizados en la imagen?'}, ...
-            'Si', ...
+            'Do you wish to save the changes'
+            'effected on the image?'}, ...
+            'Yes', ...
             'No');
     close
     switch menu_guardar
@@ -40,5 +34,5 @@ if exist('RGB','var') && exist('RGB0','var')
             R0 = R; G0 = G; B0 = B;
     end
 else
-    errordlg('No es posible guardar cambios','Error: Guardar Cambios')
+    errordlg('Changes cannot be saved','Error: Save Changes')
 end

@@ -1,5 +1,3 @@
-% COMPARACIÓN DE IMAGEN Y PLUVIOGRAMA
-
 if exist('C','var')
     
     figure, subplot(2,1,1), image(RGB(:,j_inicial:j_final,:)),
@@ -9,5 +7,5 @@ if exist('C','var')
             set(gcf,'units','normalized','outerposition',[0.1 0.1 0.8 0.8])
 
 else
-    errordlg('Debe digitalizar la imagen para poder comparar resultados.','Error: Digitalización no Realizada')
+    errordlg('You must digitize the image before comparing results.','Error: Digitization not found')
 end

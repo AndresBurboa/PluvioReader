@@ -1,27 +1,19 @@
-% (3.2) UNIR Y ELIMIAR ELEMENTOS AUTOMÁTICAMENTE BW
-
 if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(size(BW0)) == 2) ...
         && exist('x_margen','var')
     
-    tic
-    % Redefinir BW (solo para quitar sugerencia de prealojar la imagen)
+    % tic
     BW = BW0;
     
-    % Etiquetar imagen
     [LAB, ~] = bwlabel(BW);
     
-    % Definir márgenes representativos
     x_margen13 = min(x_margen1,x_margen3);
     x_margen24 = max(x_margen2,x_margen4);
     y_margen12 = min(y_margen1,y_margen2);
     y_margen34 = max(y_margen3,y_margen4);
     
-    % ELIMINAR ELEMENTOS EN BORDES (SUPERIOR E INFERIOR) DE IMAGEN (1)
     lab_edge = unique(nonzeros([LAB(1,:), LAB(rows,:)]));
     BW(ismember(LAB, lab_edge)) = 0;
 
-    % ELIMINAR ELEMENTOS FUERA DE LA EXTENSIÓN ÚTIL (IZQUIERDA Y DERECHA)
-    % DE LA IMAGEN (2)
     for i = 1:rows
         j_izq0 = x_margen13 - 1;
         j_der0 = x_margen24 + 1;
@@ -35,8 +27,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
         BW(i,min(cols,j_der0):cols) = 0;
     end
     
-    % ELIMINAR ELEMENTOS DE LA LÍNEA VERTICAL QUE SE ENCUENTRA (A VECES) AL
-    % INICIO DEL PLUVIOGRAMA (3)
     [LAB, ~] = bwlabel(BW);
     PROPS = regionprops(LAB,'BoundingBox','Eccentricity','Orientation');
     dj_borrar0 = 50;
@@ -51,7 +41,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
         end
     end
     
-    % ETIQUETAR IMAGEN Y OBTENER INDICES EXTREMOS DE CADA ELEMENTO (I,J)
     [LAB, NUM] = bwlabel(BW);
     PROPS = regionprops(LAB, 'Extrema');
     I = zeros(8*NUM,1);
@@ -69,13 +58,10 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             floor(PROPS(n).Extrema(5,1)); ceil(PROPS(n).Extrema(6,1)); ...
             ceil(PROPS(n).Extrema(7,1)); ceil(PROPS(n).Extrema(8,1))];
     end
-    % Eliminar índices extremos que estén repetidos
     IJ = [I, J];
     IJ = unique(IJ,'rows');
     I = IJ(:,1);     J = IJ(:,2);
     
-    % DEFINIR MÁRGENES SUPERIOR E INFERIOR QUE DELIMITAN A LA LÍNEA,
-    % distintos a los márgenes de la grilla
     sum_pix_horz = sum(BW,2);
     i_sup = round(rows/2);
     i_inf = i_sup;
@@ -94,12 +80,8 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
 %         i_inf = round((y_margen34 + 0.5*(rows - y_margen34)));
 %     end
         
-    % DEFINIR ETIQUETA DE PRIMER Y ÚLTIMO ELEMENTO DE LÍNEA (según criterio
-    % de etiqueta con mayor área)
     area_umb = 2;
-    % Versión sparse de LAB
     LAB_sparse = sparse(LAB);
-    % Primer elemento
     dx_buscar_area_inicial = 20;
     num_inicial = unique(nonzeros(LAB(i_sup:i_inf,x_margen13:x_margen13 + dx_buscar_area_inicial)));
     area_inicial = area_umb;
@@ -109,7 +91,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             area_inicial = nnz(LAB == n);
         end
     end
-    % Último elemento
     dx_buscar_area_final = 25;
     num_final = unique(nonzeros(LAB(i_sup:i_inf,x_margen24 - dx_buscar_area_final:x_margen24)));
     area_final = area_umb;
@@ -119,7 +100,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             area_final = nnz(LAB == n);
         end
     end
-    % En caso de no haber encontrado el primer o últmo elemento
     if isempty(num_inicial) || area_inicial <= area_umb
         j = x_margen13 + dx_buscar_area_inicial;
         while ~ any(BW(i_sup:i_inf,j)) || area_inicial <= area_umb
@@ -153,8 +133,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
         end
     end
     
-    % DEFINIR ÍNDICE INICIAL Y FINAL (CORRESPONDIENTES AL PRIMER Y ÚLTIMO
-    % ELEMENTO)
     i_inicial = 1;
     j_inicial = 1;
     while ~ any(LAB(:,j_inicial) == NUM_inicial)
@@ -172,7 +150,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
         i_final = i_final + 1;
     end
     
-    % DEFINIR MÁRGENES IZQUIERDO Y DERECHO, DONDE SE UNIRÁN ELEMENTOS
     j_izq = j_inicial;
     j_der = j_final;
     while any(LAB(:,j_izq) == NUM_inicial)
@@ -183,21 +160,16 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
         j_der = j_der - 1;
     end
     j_der = j_der + 1;
-    % Distancia de resguardo para no borrar elementos en exceso
     dj_izq = 15;
     dj_der = 15;
     j_izq = max(j_izq - dj_izq,j_inicial);
     j_der = min(j_der + dj_der,j_final);
     
-    % Eliminar índices fuera de los márgenes izquierdo y derecho
     I((J < j_izq) | (J > j_der)) = [];
     J((J < j_izq) | (J > j_der)) = [];
-    % Eliminar índices fuera de los márgenes superior e inferior
     J((I > i_inf) | (I < i_sup)) = [];
     I((I > i_inf) | (I < i_sup)) = [];
     
-    % UNIR ELEMENTOS DE MANERA HORIZONTAL, VERTICAL U OBLICUA (parte 1;
-    % separados solo por 1 pixel)
     for k = 1:length(I)
         i = I(k);
         j = J(k);
@@ -219,25 +191,14 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             end
         end
     end
-    % Actualizar etiquetas
     [LAB, ~] = bwlabel(BW);
     
-    % - UNIR ELEMENTOS DE MANERA HORIZONTAL, VERTICAL U OBLICUA (parte 2) -
-    % (separados por 2 o más pixeles)
-    
-    % Distancia de partida, distancia de aumento y distancia máxima en que
-    % se unirán elementos
     dist_ij = 2;
     delta_dist = 1;
     dist_ij_max = 1/3*(y_margen34 - y_margen12);
-    % Variables de restricción de unión horizontal entre elementos
-    % verticales
     sum_vert_max = 0.2*rows;
     dj_sum_vert = 5;
-    % Variable para permitir uniones oblicuas
     sum_vert_min = 0.1*rows;
-    % Variables para definir vecindades a los índices cuando se une y
-    % elimina elementos
     di_unir_v = 5;
     dj_unir_v = 5;
     dj_unir_h = 15;
@@ -245,20 +206,14 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
     dj_borrar_h = dj_unir_h;
     dj_borrar_h2 = 50;
     
-    % Suma vertical de pixeles
     sum_pix_vert = sum(BW(i_sup:i_inf,:));
-    % Ángulo umbral para uniones oblicuas cercanas a 90°
     theta_umb = 80/180*pi;
-    % Valores iniciales para lis índices izq y der
     i_izq = i_inicial;  j_izq = j_inicial;
     i_der = i_final;    j_der = j_final;
-    % Variables inferior y superior para permitir ciertas uniones oblícuas
-    % en los extremos
     di_sup = 20;
     di_inf = 50;
     
     while dist_ij <= dist_ij_max && j_izq < j_der - 1
-        % Variables para la eliminación de índices que no deben unirse
         ind_IJ = 1:length(I);   ind_IJ = ind_IJ';
         borrar_IJ = zeros(length(I),1);
         cont_b = 1;
@@ -271,38 +226,30 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
                 && i + di_unir_v <= rows ...
                 && j + dj_unir_h <= cols && j + dj_unir_v <= cols %...
                 %&& any( LAB(sub2ind(size(BW),I,J)) ~= LAB(i,j) )%& (I - i).^2 + (J - j).^2 <= (dist_ij + 1).^2 )
-                % Índices ij de unión
-                % Unión vertical y semi vertical hacia arriba
                 i2 = i-dist_ij-1;
                 j2 = j;
                 i21 = i-dist_ij-1;
                 j21 = j+1;
-                % Unión semi horizontal hacia arriba, horizontal y semi
-                % horizontal hacia abajo
                 i31 = i-1;
                 j31 = j+dist_ij+1;
                 i3 = i;
                 j3 = j+dist_ij+1;
                 i32 = i+1;
                 j32 = j+dist_ij+1;
-                % Unión semi vertical y vertical hacia abajo
                 i41 = i+dist_ij+1;
                 j41 = j+1;
                 i4 = i+dist_ij+1;
                 j4 = j;
-                % UNIÓN VERTICAL hacia arriba
                 if i2 >= i_sup && BW(i2, j2) && LAB(i, j) ~= LAB(i2, j2) && ~ all(BW(i2+1:i-1, j)) ...
                         && ~ any(LAB(i2, j2) == LAB(i2 + di_unir_v, j2:j2+dj_unir_v)) %...
 %                         && all(LAB(i2,j2) ~= LAB(i+di_unir2,j-dj_unir2:j+dj_unir2)) ...
 %                         && all(LAB(i,j) ~= LAB(i2-di_unir2,j2-dj_unir2:j2+dj_unir2))
                     BW(i2+1:i-1,j2) = 1;
                     cambios = 1;
-                % UNIÓN SEMI VERTICAL hacia arriba
                 elseif i21 >= i_sup && BW(i21,j21) && LAB(i,j) ~= LAB(i21,j21) && ~ all(BW(i21+1:i-1,j21)) ...
                         && ~ any(LAB(i21, j21) == LAB(i21 + di_unir_v, j21:j21+dj_unir_v))
                     BW(i21+1:i-1,j21) = 1;
                     cambios = 1;
-                % UNIÓN SEMI HORIZONTAL hacia arriba
                 elseif j31 <= j_der && BW(i31,j31) && LAB(i,j) ~= LAB(i31,j31) && ~ all(BW(i,j+1:j31-1)) ...
                         && ~ any(LAB(i31,j31) == LAB(:,j31 - dj_unir_h)) ...
                         && all(sum_pix_vert(j-dj_sum_vert:j+dj_sum_vert) < sum_vert_max) ...
@@ -311,7 +258,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
 %                         && ~ any(LAB(i31,j31) == LAB(i31-di_unir,j31-dj_unir:j31+dj_unir)) && ~ any(LAB(i31,j31) == LAB(i31+di_unir,j31-dj_unir:j31+dj_unir))
                     BW(i,j+1:j31-1) = 1;
                     cambios = 1;
-                % UNIÓN HORIZONTAL
                 elseif j3 <= j_der && BW(i3,j3) && LAB(i,j) ~= LAB(i3,j3) && ~ all(BW(i,j+1:j3-1)) ...
                         && ~ any(LAB(i3,j3) == LAB(:,j3 - dj_unir_h)) ...
                         && all(sum_pix_vert(j-dj_sum_vert:j+dj_sum_vert) < sum_vert_max) ...
@@ -320,7 +266,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
 %                         && ~ any(LAB(i3,j3) == LAB(i3-di_unir,j3-dj_unir:j3+dj_unir)) && ~ any(LAB(i3,j3) == LAB(i3+di_unir,j3-dj_unir:j3+dj_unir))
                     BW(i,j+1:j3-1) = 1;
                     cambios = 1;
-                % UNIÓN SEMI HORIZONTAL hacia abajo
                 elseif j32 <= j_der && BW(i32,j32) && LAB(i,j) ~= LAB(i32,j32) && ~ all(BW(i,j+1:j32-1)) ...
                         && ~ any(LAB(i32,j32) == LAB(:,j32 - dj_unir_h)) ...
                         && all(sum_pix_vert(j-dj_sum_vert:j+dj_sum_vert) < sum_vert_max) ...
@@ -329,22 +274,18 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
 %                         && ~ any(LAB(i32,j32) == LAB(i32-di_unir,j32-dj_unir:j32+dj_unir)) && ~ any(LAB(i32,j32) == LAB(i32+di_unir,j32-dj_unir:j32+dj_unir)) ...
                     BW(i,j+1:j32-1) = 1;
                     cambios = 1;
-                % UNIÓN SEMI VERTICAL hacia abajo
                 elseif i41 <= i_inf && BW(i41,j41) && LAB(i,j) ~= LAB(i41,j41) && ~ all(BW(i+1:i41-1,j)) ...
                         && ~ any(LAB(i41,j41) == LAB(i41 - di_unir_v,:))
                     BW(i+1:i41-1,j) = 1;
                     cambios = 1;
-                % UNIÓN VERTICAL hacia abajo
                 elseif i4 <= i_inf && BW(i4, j4) && LAB(i, j) ~= LAB(i4, j4) && ~ all(BW(i+1:i4-1, j)) ...
                         && ( ~ any(LAB(i4, j4) == LAB(i4-di_unir_v, j4:j4+dj_unir_v)) || i4 + di_inf > i_inf )%...
 %                         && all(LAB(i,j) ~= LAB(i4+di_unir2,j4-dj_unir2:j4+dj_unir2)) ...
 %                         && all(LAB(i4,j4) ~= LAB(i-di_unir2,j-dj_unir2:j+dj_unir2))
                     BW(i+1:i4-1,j4) = 1;
                     cambios = 1;
-                % UNIÓN OBLICUA
                 elseif  i - di_unir_v >= 1 && i + di_unir_v <= rows ...
                         && ~ any(LAB(i,j) == LAB(i-di_unir_v:i+di_unir_v,j+1)) %|| i >= i_max_unir
-                    % UNIÓN ENTRE -45° y 45°
                     unir_linea = 1;
                     for i5 = [i-round(dist_ij/sqrt(2))-1:i-2 i+2:i+round(dist_ij/sqrt(2))+1]
                         theta = asin((i5 - i)/(dist_ij + 1));
@@ -375,13 +316,11 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
                             end
                         end
                     end
-                    % UNIÓN ENTRE 45° y 90° (y entre -45° y -90°)
                     unir_linea = 1;
                     for j5 = j+2:j+round(dist_ij/sqrt(2))+1
                         theta = acos((j5 - j)/(dist_ij + 1));
                         i51 = round(i - (dist_ij + 1)*sin(theta));
                         i52 = round(i + (dist_ij + 1)*sin(theta));
-                        % Parte 1, entre 45° y 90°
                         if i51 >= i_sup && i ~= i51 && j ~= j5 && j5 <= cols && abs(theta) >= pi/4 ...
                                 && BW(i51, j5) && LAB(i, j) ~= LAB(i51, j5) ...
                                 && ( ~ any(LAB(i51, j5) == LAB(i+di_unir_v, j:j5+dj_unir_v)) || any(sum_pix_vert(j5-dj_sum_vert:j5+dj_sum_vert) > sum_vert_min) ) ...
@@ -415,7 +354,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
                                 cambios = 1;
                                 break
                             end
-                        % Parte 2, entre -45° y -90°
                         elseif i52 <= i_inf && i ~= i52 && j ~= j5 && j5 <= cols && abs(theta) >= pi/4 ...
                                 && BW(i52,j5) && LAB(i,j) ~= LAB(i52,j5) ...
                                 && ~ any(LAB(i,j) == LAB(i + di_unir_v,:)) ...
@@ -448,21 +386,15 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
                     end
                 end
             end
-            % Borrar índices intermedios en un mismo elemento, en el eje
-            % horizontal
             if any(LAB(i,j) == LAB(:,j + dj_borrar_h)) && any(LAB(i,j) == LAB(:,j - dj_borrar_h))
                 borrar_IJ = borrar_IJ | ((I == i) & (J == j));
             end
-            % Borrar índices intermedios en un mismo elemento, en el eje
-            % vertical
             if i + di_borrar_v <= rows && i - di_borrar_v >= 1 ...
                     && any(LAB(i,j) == LAB(i + di_borrar_v,j-dj_unir_v:j+dj_unir_v)) ...
                     && any(LAB(i,j) == LAB(i - di_borrar_v,j-dj_unir_v:j+dj_unir_v)) ...
                     && i_inf < i + 50
                 borrar_IJ = borrar_IJ | ((I == i) & (J == j));
             end
-            % Borrar índices intermedios a otros elementos, en el eje
-            % horizontal
             if cambios == 0 && j - dj_borrar_h2 >= 1 && j + dj_borrar_h2 <= cols
                 lab1 = nonzeros(LAB(i_sup:i_inf,j - dj_borrar_h2));
                 lab2 = nonzeros(LAB(i_sup:i_inf,j + dj_borrar_h2));
@@ -470,8 +402,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
                     borrar_IJ = borrar_IJ | ((I == i) & (J == j));
                 end
             end
-            % Borrar índices oblicuos utilizados al unir (o que era
-            % posible utilizar pero cruzaron otra línea)
             if cambios == 1 || unir_linea == 0
                 borrar_aux = (I == i) & (J == j);
                 ind_no = ind_IJ(borrar_aux);    ind_no = ind_no(end);
@@ -480,18 +410,15 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             end
         end
         
-        % Actualizar distancia y etiquetas
         dist_ij = dist_ij + delta_dist;
 %         [LAB, ~] = bwlabel(BW);
 %         LAB_sparse = sparse(LAB);
         CC = bwconncomp(BW);
         LAB = labelmatrix(CC);
         
-        % Actualizar etiquetas izquierda y derecha
         NUM_izq = LAB(i_izq,j_izq);
         NUM_der = LAB(i_der,j_der);
         
-        % Actualizar j_izq y j_der
         while j_izq > 1 && j_izq < cols && any(LAB(:,j_izq) == NUM_izq)
             j_izq = j_izq + 1;
         end
@@ -509,16 +436,12 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             i_der = i_der + 1;
         end
         
-        % Avanzar j_izq incluso cuando hay una bajada de 10 a 0 mm, que no
-        % esté unida por una línea vertical, pero esté superpuesta en las
-        % columnas
         a = 0;
         area_min = i_inf - i_sup;
         area_izq2 = area_min + 1;
         area_der2 = area_izq2;
         lab_izq = unique(nonzeros(LAB(i_sup:i_inf,j_izq)));
         while numel(lab_izq) == 2 && area_izq2 > area_min %|| sum(sum(ismember(LAB, lab_izq))) < area_min
-            % Valor de la otra etiqueta y actualización de area_izq2
             if lab_izq(1) == NUM_izq
                 num_izq2 = lab_izq(2);
             else
@@ -528,7 +451,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             area_izq2 = nnz(LAB == num_izq2);
 %             area_izq2 = full(nnz(LAB_sparse == num_izq2));
             if area_izq2 > area_min
-                % Búsqueda de elemento más a la derecha de j_izq
                 while any(LAB(:,j_izq) == num_izq2)
                     j_izq = j_izq + 1;
                 end
@@ -537,16 +459,13 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
                 while LAB(i_izq,j_izq) ~= num_izq2
                     i_izq = i_izq - 1;
                 end
-                % Actualización de NUM_izq y lab_izq
                 NUM_izq = LAB(i_izq,j_izq);
                 lab_izq = unique(nonzeros(LAB(i_sup:i_inf,j_izq)));
             end
         end
         
-        % Avanzar j_der para el caso análogo al anterior
         lab_der = unique(nonzeros(LAB(i_sup:i_inf,j_der)));
         while numel(lab_der) == 2 && area_der2 > area_min
-            % Valor de la otra etiqueta y actualización de j_izq2
             if lab_der(1) == NUM_der
                 num_der2 = lab_der(2);
             else
@@ -555,7 +474,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             area_der2 = nnz(LAB == num_der2);
 %             area_der2 = full(nnz(LAB_sparse == num_der2));
             if area_der2 > area_min
-                % Búsqueda de elemento más a la izquierda de j_der
                 while any(LAB(:,j_der) == num_der2)
                     j_der = j_der - 1;
                 end
@@ -564,19 +482,15 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
                 while LAB(i_der,j_der) ~= num_der2
                     i_der = i_der + 1;
                 end
-                % Actualización de NUM_der y lab_der
                 NUM_der = LAB(i_der,j_der);
                 lab_der = unique(nonzeros(LAB(i_sup:i_inf,j_der)));
             end
         end
         
-        % Actualizar etiquetas izquierda y derecha (2)
         NUM_izq = LAB(i_izq,j_izq);
         NUM_der = LAB(i_der,j_der);
         
-        % Distancia de resguardo del margen
         if j_izq < j_der - 1
-            % Margen izquierdo
             j_izq = j_izq - dj_izq;
             while all(LAB(:,j_izq) ~= NUM_izq)
                 j_izq = j_izq + 1;
@@ -585,7 +499,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             while LAB(i_izq,j_izq) ~= NUM_izq
                 i_izq = i_izq - 1;
             end
-            % Margen derecho
             j_der = j_der + dj_der;
             while all(LAB(:,j_der) ~= NUM_der)
                 j_der = j_der - 1;
@@ -596,34 +509,25 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             end
         end
 
-        % Eliminar índices intermedios a elementos
 %         borrar_IJ(borrar_IJ == 0) = [];
         I(logical(borrar_IJ)) = [];
         J(logical(borrar_IJ)) = [];
 
-        % Eliminar índices a la izquierda y derecha
         I((J < j_izq | J > j_der)) = [];
         J((J < j_izq | J > j_der)) = [];
         
-        % Actualizar sum_pix_vert
         sum_pix_vert = sum(BW(i_sup:i_inf,:));
     end
-    toc
+%     toc
     
-    % Definir variable para indicar que se puede digitalizar la imagen
     digitalizar = 0;
     if j_izq >= j_der - 1
         digitalizar = 1;
     end
     
-    % ---------- REDIBUJAR LÍNEA ----------
-    % Etiquetas iniciales
     [LAB0, ~] = bwlabel(BW);
-    % Eliminar segmentos que no sean suficientemente grandes
     area_umb = round(1.2*(i_inf - i_sup));
     BW = bwareaopen(BW,area_umb);
-    % Eliminar elementos que esten completamente fuera del margen superior
-    % o inferior
     [LAB, NUM] = bwlabel(BW);
     PROPS = regionprops(LAB, 'BoundingBox');
     for n = 1:NUM
@@ -633,9 +537,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             BW(LAB == n) = 0;
         end
     end
-    % Eliminar elementos que se encuentren en una posición intermedia a
-    % otros elementos más grandes (que están alineados en una misma
-    % columna)
     [LAB, NUM] = bwlabel(BW);
     PROPS = regionprops(LAB, 'BoundingBox');
     LAB_sparse = sparse(LAB);
@@ -651,7 +552,6 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             kk = kk + 1;
         end
     end    
-    % Incluir segmentos del inicio y final (en caso de haberlos borrado)
     [LAB, ~] = bwlabel(BW);
     if LAB(i_inicial,j_inicial) == LAB(i_final,j_final) ...
             && LAB(i_inicial,j_inicial) ~= 0
@@ -665,14 +565,9 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
             BW = BW | LAB0 == LAB0(i_inicial,j_inicial) | LAB0 == LAB0(i_final,j_final);
         end
     end
-    % ---------- FIN REDIBUJAR LÍNEA ----------
-    
-    % Calcular todas las propiedades (solo con fines de depurar errores,
-    % otros casos es necesario el BoundingBox)
     [LAB, NUM] = bwlabel(BW);
     PROPS = regionprops(LAB, 'BoundingBox', 'Centroid');
     
-    % Gráfica de los elementos unidos
     warning off all
     figure, imshow(imcomplement(BW)),
     for n = 1:NUM
@@ -686,49 +581,42 @@ if (exist('BW','var') || exist('BW0','var')) && (exist('BW0','var') && numel(siz
         rectangle('Position',[j_izq, i_sup, j_der-j_izq, i_inf-i_sup], ...
             'EdgeColor','r','LineWidth',2,'LineStyle','--'),
     end
-    set(gcf,'Name','Vista Previa de elementos de línea unidos automáticamente','NumberTitle','off')
+    set(gcf,'Name','Preview of line elements joined automatically','NumberTitle','off')
     warning on all
     
-    % Ventana junto a la gráfica
     if NUM == 1 || digitalizar
-        uiwait(msgbox({'OPERACIÓN COMPLETADA. LA LÍNEA PUEDE SER DIGITALIZADA'
+        uiwait(msgbox({'OPERATION COMPLETED. LINE CAN BE DIGITIZED NOW.'
             ''
-            'La línea en la imagen es única, o sus segmentos no presentan columnas vacías.'
+            'The line in the image is unique, or else its segments do not present empty columns.'
             '_______________________________________________________'
             ''
-            'Se recomienda revisar posibles errores en la unión de la línea.'
+            'Please revise for potential errors when joining the line.'
             ''
-            'Haga click en OK o cierre esta ventana para continuar'}, ...
-            '(3.2) UNIR Y ELIMINAR ELEMENTOS (AUTOMÁTICO)', 'help'));
+            'Click OK or close this window to continue'}, ...
+            '(3.2) JOINING OR REMOVING ELEMENTS (AUTOMATICALLY)', 'help'));
     else
-        uiwait(msgbox({'OPERACIÓN COMPLETADA. LA LÍNEA NO PUEDE SER DIGITALIZADA'
+        uiwait(msgbox({'OPERATION COMPLETED. THE LINE CANNOT BE DIGITIZED.'
             ''
-            'Los segmentos de línea en la imagen presentan columnas vacías.'
+            'There are empty columns for some of the line segments in the image.'
             '_______________________________________________________'
             ''
-            'Si la línea se unió de forma incorrecta no guarde cambios, una la parte incorrecta de forma manual y vuelva a realizar la unión automática.'
+            'If the line was incorrectly joined do not save your changes; manually join the wrong segments and then redo the automatic joining.'
             ''
-            'Haga click en OK o cierre esta ventana para continuar'}, ...
-            '(3.2) UNIR Y ELIMINAR ELEMENTOS (AUTOMÁTICO)', 'error'));
+            'Click OK or close this window to continue'}, ...
+            '(3.2) JOINING OR REMOVING ELEMENTS(AUTOMATICALLY)', 'error'));
     end
     close
     
-    % Comparación antes y después de la imagen. Guardar Cambios, junto con
-    % versión anterior de la imagen
     run('c2_guardar_cambios_bw')
 
     if menu_guardar == 1
-        % Mensaje en la ventana de comandos
-        disp(['- (3.2) Unir y Eliminar elementos (auto)         TERMINADO!        ' datestr(now)])
+        disp(['- (3.2) Joining or removing elemetns (auto)         COMPLETED!        ' datestr(now)])
     end
     
 elseif ( ~ exist('x_margen3','var') || ~ exist('x_margen4','var') ) && exist('RGB','var')
-    % Cuadro de error en caso de no haber definido los márgenes de registro
-    errordlg('Debe definir los márgenes de registro antes de unir y eliminar elementos.','Error: Márgenes no Definidos')
+    errordlg('You must define the margins before joining or removing elements.','Error: Undefined margins')
 elseif exist('RGB','var') && ((~ exist('BW','var') && ~ exist('BW0','var')) || (exist('BW0','var') && numel(size(BW0)) ~= 2))
-    % Cuadro de error en caso de no haber reconocido la linea
-    errordlg('Debe identificar la línea antes de unir y eliminar elementos.','Error: Linea no Identificada')
+    errordlg('You must identify the line before joining or removing elements.','Error: Line has not been identified')
 else
-    % Cuadro de error en caso de no haber seleccionado la imagen
-    errordlg('Debe seleccionar una imagen antes de unir y eliminar elementos.','Error: Imagen no encontrada')
+    errordlg('You must select an image before joining or removing elements.','Error: Image not found')
 end

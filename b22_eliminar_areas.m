@@ -1,10 +1,7 @@
-% (2.2) ELIMINAR ÁREAS EN LA IMAGEN
-
 if exist('RGB','var')
     
-    % Almacenamiento de Imagen a modificar
     RGB0 = RGB; R0 = R; G0 = G; B0 = B;
-    % Selección del color más repetido, para utilizarlo al borrar
+
     [count1, loc1] = imhist(R);
     [count2, loc2] = imhist(G);
     [count3, loc3] = imhist(B);
@@ -15,65 +12,54 @@ if exist('RGB','var')
     eraser2 = loc2(pos_max2);
     eraser3 = loc3(pos_max3);
 
-    % Mostrar imagen y cuadro de diálogo con instrucciones
     warning off all
     figure,	imshow(RGB),
     warning on all
     menu_elim = menu({ ...
-        '(2.2) ELIMINAR ÁREAS'
-        'DEFINICIÓN DE ÁREA A ELIMINAR'
+        '(2.2) ERASE AREA'
+        'DEFINE IMAGE AREA TO BE REMOVED'
         '________________________'
         ''
-        'Realice un ZOOM al área que desea eliminar'
+        'Please zoom in to the area where you wish to remove an element'
         ''
-        'Seleccione puntos que envuelvan el área que'
-        'desea eliminar, haciendo CLICK en la imagen'
+        'Clicking on the image, select points so as to surround the area that you wish to remove'
         ''
-        'Presione ENTER al finalizar selección'
+        'Hit ENTER when done'
         '________________________'
         ''
-        'Haga click en OK al finalizar el zoom'
-        '(No cierre la imagen. Haga click en Cancelar'
-        'o cierre esta ventana para salir de la'
-        'definición de márgenes)'}, ...
+        'Click OK when done zooming'
+        '(Do not close the image. Click “Cancel”'
+        'or else close this window in order to exit)'}, ...
         'OK', ...
-        'Cancelar');
+        'Cancel');
 
     switch menu_elim
         case 1
-            % Selección de puntos
             [x_elim, y_elim,    ~] = impixel;
             close
-            % Creación matriz con área a borrar
             E = zeros(rows,cols);
             for m = 1:length(x_elim)
                 E(y_elim(m),x_elim(m)) = 1;
             end
             E = bwconvhull(E);
-            % Borrado de áreas y escritura de RGB0
             R0(E == 1) = eraser1;
             G0(E == 1) = eraser2;
             B0(E == 1) = eraser3;
             RGB0(:,:,1) = R0; RGB0(:,:,2) = G0; RGB0(:,:,3) = B0; 
             
-            % Comparación antes y después de la imagen. Guardar Cambios,
-            % junto con versión anterior de la imagen
             run('c1_guardar_cambios_rgb')
             
             if menu_guardar == 1
-                % Mensaje en la ventana de comandos
-                disp(['- (2.2) Eliminar Áreas                           TERMINADO!        ' datestr(now)])
+                disp(['- (2.2) Remove Elements                           COMPLETED!        ' datestr(now)])
             end
 
-            % Cuadro de pregunta para seleccionar más áreas
-            quest_elim = questdlg('¿Desea seleccionar otra área para eliminar?','Selección de áreas a eliminar','Si','No','Si');
-            if all(quest_elim == 'Si')
+            quest_elim = questdlg('Do you wish to select another area in order to remove some element?','Define image area to be removed','Yes','No','Yes');
+            if all(quest_elim == 'Yes')
                 run('b22_eliminar_areas')
             end
         otherwise
             close
     end
 else
-    % Cuadro de error en caso de no haber seleccionado la imagen
-    errordlg('Debe seleccionar una imagen antes de eliminar áreas.','Error: Imagen no encontrada')
+    errordlg('You must select an image before removing elements.','Error: Image not found')
 end

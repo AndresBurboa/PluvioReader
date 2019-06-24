@@ -1,9 +1,5 @@
-% (1.3) DEFINIR MÁRGENES DEL ÁREA DE REGISTRO. Parte 2
-
-% Cerrar figura
 close
 
-% Definición de posiciones de los nombres de cada punto
 dx_puntos = 170;
 dy_puntos = 50;
 xx_corr2 = xx_corr;
@@ -13,7 +9,6 @@ yy_corr2 = yy_corr;
 yy_corr2(1:2) = yy_corr2(1:2) + dy_puntos;
 yy_corr2(3:4) = yy_corr2(3:4) - dy_puntos;
 
-% Mostrar márgenes con los nombres de los puntos
 warning off all
 figure, imshow(RGB), hold on,
 plot(xx_corr, yy_corr, 'r+', 'LineWidth', 2, 'MarkerSize', 30), hold on,
@@ -24,31 +19,29 @@ set(gcf,'Color','w','units','normalized','Position',[0.05 0.1 0.9 0.7])
 warning on all
 
 menu_marg2 = menu({ ...
-    '(1.3) DEFINIR MÁRGENES DE LA IMAGEN'
-    'CORRECCIÓN MANUAL DE PUNTOS'
+    '(1.3) DEFINE IMAGE MARGINS'
+    'INPUT CORNER POINTS MANUALLY'
     '________________________'
     ''
-    'Haga clic en la casilla correspondiente al'
-    'punto que desea corregir.'
+    'Please click on the choice corresponding to the'
+    'corner point you wish to select.'
     ''
-    'Si ya corrigió los puntos que deseaba, haga'
-    'click en "Finalizar".'
+    'If you are done selecting points, please'
+    'click "Finalize".'
     ''
-    'Si desea salir de la definición de márgenes,'
-    'haga clic en "Cancelar".'}, ...
-    'Punto 1', ...
-    'Punto 2', ...
-    'Punto 3', ...
-    'Punto 4', ...
-    '     Finalizar      ', ...
-    'Cancelar');
+    'If you wish to leave the DEFINE IMAGE MARGINS routine,'
+    'please click "Cancel".'}, ...
+    'Point 1', ...
+    'Point 2', ...
+    'Point 3', ...
+    'Point 4', ...
+    '      End      ', ...
+    'Cancel');
 
 if any(menu_marg2 == [1 2 3 4])
     
-    % Cerrar figura
     close
     
-    % Mostrar esquina seleccionada y cuadro de diálogo con instrucciones
     warning off all
     figure, imshow(RGB), hold on,
     plot(xx_corr, yy_corr, 'r+', 'LineWidth', 2, 'MarkerSize', 30), hold on,
@@ -60,45 +53,38 @@ if any(menu_marg2 == [1 2 3 4])
     warning on all
     
     menu_marg3 = menu({ ...
-        '(1.3) DEFINIR MÁRGENES Y ENCUADRAR IMAGEN'
-        'CORRECCIÓN MANUAL DE PUNTOS'
+        '(1.3) DEFINE IMAGE MARGINS AND CENTER THE IMAGE'
+        'MANUAL SELECTION OF CORNER POINTS'
         '________________________'
         ''
-        'Si lo necesita, haga zoom al área de la imagen'
-        'donde se encuentra el punto que desea corregir.'
+        'If needed, you can zoom in to that part of the image'
+        'where you wish to select a corner point.'
         ''
-        ['Seleccione el ' puntos{menu_marg2} ' haciendo clic en']
-        'la imagen sobre la intersección de la grilla'
-        'que corresponda.'
+        ['Select the ' puntos{menu_marg2} ' clicking over']
+        'the image at the corresponding grid intersection.'
         '________________________'
         ''
-        'Haga click en OK para pasar a la selección'
-        'del punto.'
+        'Click OK to go to corner point selection.'
+      
         ''
-        '(No cierre la imagen. Haga click en Cancelar'
-        'o cierre esta ventana para salir de la'
-        'definición de márgenes)'}, ...
+        '(Do not close the image. Click “Cancel”'
+        'or else close this window in order to exit'
+        'define image margins)'}, ...
         'OK', ...
-        'Cancelar');
+        'Cancel');
     
-    % Selección de punto
     if menu_marg3 == 1
         [xx_corr(menu_marg2), yy_corr(menu_marg2), ~] = ginput(1);
         xx_corr = round(xx_corr);     yy_corr = round(yy_corr);
     end
-    % Repetir la corrección de márgenes
     run('b13_definir_margenes_pt2')
-    % Cerrar figura
     close
     
 elseif menu_marg2 == 5
-    % Cambio de notación de los puntos, para mantener los nombres
-    % utilizados en códigos antiguos
     x_margen1 = xx_corr(1); x_margen2 = xx_corr(2); x_margen3 = xx_corr(3); x_margen4 = xx_corr(4);
     y_margen1 = yy_corr(1); y_margen2 = yy_corr(2); y_margen3 = yy_corr(3); y_margen4 = yy_corr(4);
     x_margen = xx_corr;
     y_margen = yy_corr;
 
-    % Mensaje en la ventana de comandos
-    disp(['- (1.3) Definir márgenes y Encuadrar imagen      TERMINADO!        ' datestr(now)])
+    disp(['- (1.3) Define Image Margins and Center Image      COMPLETED!        ' datestr(now)])
 end
